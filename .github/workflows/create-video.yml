@@ -1,0 +1,54 @@
+name: Create Video from Images
+
+on:
+  repository_dispatch:
+    types: [create-video]
+
+jobs:
+  create-video:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+        pip install requests Pillow
+
+    - name: Create video
+      env:
+        IMAGE_URL_1: ${{ github.event.client_payload.image_url_1 }}
+        IMAGE_URL_2: ${{ github.event.client_payload.image_url_2 }}
+        IMAGE_URL_3: ${{ github.event.client_payload.image_url_3 }}
+      run: |
+        python create_video.py
+
+    - name: Upload video artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: output-video
+        path: output.mp4
+
+    - name: Get artifact download URL
+      id: get_artifact_url
+      run: |
+        echo "::set-output name=download_url::${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+    - name: Comment with video link
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `Video created successfully! You can download it from the Artifacts section of this workflow run: ${{ steps.get_artifact_url.outputs.download_url }}`
+          })
