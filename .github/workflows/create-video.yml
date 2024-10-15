@@ -41,14 +41,6 @@ jobs:
       run: |
         echo "::set-output name=download_url::${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-    - name: Comment with video link
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: `Video created successfully! You can download it from the Artifacts section of this workflow run: ${{ steps.get_artifact_url.outputs.download_url }}`
-          })
+    - name: Output video URL
+      run: |
+        echo "VIDEO_URL=${{ steps.get_artifact_url.outputs.download_url }}" >> $GITHUB_OUTPUT
